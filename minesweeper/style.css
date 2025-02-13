@@ -1,0 +1,102 @@
+:root {
+    --cell-size: 35px;
+    --grid-color: #c0c0c0;
+    --revealed-color: #d3d3d3;
+    --mine-color: #ff4444;
+    --flag-color: #ffd700;
+    --text-color: #1a1a1a;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: 'Arial', sans-serif;
+}
+
+.game-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(10, var(--cell-size));
+    gap: 2px;
+    background: var(--grid-color);
+    padding: 2px;
+    border-radius: 3px;
+}
+
+.cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.cell.revealed {
+    background: var(--revealed-color);
+}
+
+.cell.mine {
+    background: var(--mine-color);
+}
+
+.cell.flagged::after {
+    content: "🚩";
+    font-size: 0.8em;
+}
+
+#game-status {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: bold;
+    min-height: 24px;
+}
+
+button {
+    padding: 8px 16px;
+    background: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+@media (max-width: 600px) {
+    :root {
+        --cell-size: 28px;
+    }
+    
+    .game-container {
+        padding: 10px;
+        margin: 10px;
+    }
+}
