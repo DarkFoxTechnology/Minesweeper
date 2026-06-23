@@ -127,6 +127,58 @@ input:checked + .slider::before {
     font-size: 0.8em;
 }
 
+.bomb-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: #ff9800;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+
+.bomb-btn:hover {
+    background: #f57c00;
+}
+
+.bomb-btn.active {
+    background: #e53935;
+    box-shadow: 0 0 10px rgba(229, 57, 53, 0.5);
+}
+
+.bomb-icon {
+    font-size: 16px;
+}
+
+.bomb-count {
+    font-size: 14px;
+    min-width: 16px;
+    text-align: center;
+}
+
+.cell.explosion {
+    animation: explode 0.3s ease-out;
+}
+
+@keyframes explode {
+    0% {
+        background: #ff5722;
+        transform: scale(1.2);
+    }
+    50% {
+        background: #ff9800;
+        transform: scale(1.1);
+    }
+    100% {
+        background: var(--revealed-color);
+        transform: scale(1);
+    }
+}
+
 #game-status {
     margin-top: 15px;
     text-align: center;

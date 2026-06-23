@@ -9,6 +9,8 @@ let timerInterval;
 let firstClick = true;
 let assistEnabled = false;
 let highlightIntensity = [];
+let bombMode = false;
+let bombCount = 3;
 
 const board = document.getElementById('game-board');
 const minesCount = document.getElementById('mines-count');
@@ -16,6 +18,8 @@ const timeDisplay = document.getElementById('time');
 const statusDisplay = document.getElementById('game-status');
 const newGameBtn = document.getElementById('new-game');
 const assistCheckbox = document.getElementById('assist-checkbox');
+const bombBtn = document.getElementById('bomb-btn');
+const bombCountDisplay = document.getElementById('bomb-count');
 
 // 初始化游戏
 function initGame() {
@@ -29,6 +33,10 @@ function initGame() {
     statusDisplay.textContent = '';
     minesCount.textContent = MINES_COUNT;
     clearInterval(timerInterval);
+    bombMode = false;
+    bombCount = 3;
+    bombBtn.classList.remove('active');
+    bombCountDisplay.textContent = bombCount;
     highlightIntensity = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
     if (assistEnabled) renderHighlights();
     
@@ -156,6 +164,54 @@ function refreshAssistHighlights() {
     renderHighlights();
 }
 
+// 小范围爆炸道具 - 炸开3x3区域（不含地雷格）
+function explodeArea(centerX, centerY) {
+    const affectedCells = [];
+    
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const nx = centerX + dx;
+            const ny = centerY + dy;
+            
+            if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && !mines[nx][ny] && !revealed[nx][ny]) {
+                affectedCells.push({ x: nx, y: ny });
+            }
+        }
+    }
+    
+    // 添加爆炸动画效果
+    affectedCells.forEach((pos, index) => {
+        setTimeout(() => {
+            const cell = document.querySelector(`[data-x="${pos.x}"][data-y="${pos.y}"]`);
+            cell.classList.add('explosion');
+            revealed[pos.x][pos.y] = true;
+            cell.classList.add('revealed');
+            const mineCount = getAdjacentMines(pos.x, pos.y);
+            if (mineCount === 0) {
+                revealEmpty(pos.x, pos.y);
+            } else {
+                cell.textContent = mineCount;
+                cell.style.color = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'gray'][mineCount - 1];
+            }
+            setTimeout(() => cell.classList.remove('explosion'), 300);
+            
+            // 最后一个动画完成后检查胜利
+            if (index === affectedCells.length - 1) {
+                setTimeout(() => {
+                    if (checkWin()) {
+                        gameOver = true;
+                        clearInterval(timerInterval);
+                        statusDisplay.textContent = '胜利！';
+                        statusDisplay.style.color = 'green';
+                    }
+                }, 100);
+            }
+        }, index * 50);
+    });
+    
+    refreshAssistHighlights();
+}
+
 // 处理单元格点击
 function handleClick(e) {
     if (gameOver) return;
@@ -163,6 +219,23 @@ function handleClick(e) {
     const x = parseInt(e.target.dataset.x);
     const y = parseInt(e.target.dataset.y);
     const isRightClick = e.button === 2;
+
+    // 炸弹模式
+    if (bombMode && !isRightClick) {
+        if (revealed[x][y] || flags[x][y]) return;
+        
+        if (bombCount > 0) {
+            bombCount--;
+            bombCountDisplay.textContent = bombCount;
+            explodeArea(x, y);
+            
+            if (bombCount === 0) {
+                bombMode = false;
+                bombBtn.classList.remove('active');
+            }
+        }
+        return;
+    }
 
     if (firstClick) {
         generateMines(x, y);
@@ -235,6 +308,12 @@ assistCheckbox.addEventListener('change', (e) => {
     } else {
         clearHighlights();
     }
+});
+
+bombBtn.addEventListener('click', () => {
+    if (gameOver || bombCount === 0) return;
+    bombMode = !bombMode;
+    bombBtn.classList.toggle('active');
 });
 
 function clearHighlights() {
