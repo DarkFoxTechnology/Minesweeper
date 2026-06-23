@@ -7,12 +7,15 @@ let gameOver = false;
 let timer = 0;
 let timerInterval;
 let firstClick = true;
+let assistEnabled = false;
+let highlightIntensity = [];
 
 const board = document.getElementById('game-board');
 const minesCount = document.getElementById('mines-count');
 const timeDisplay = document.getElementById('time');
 const statusDisplay = document.getElementById('game-status');
 const newGameBtn = document.getElementById('new-game');
+const assistCheckbox = document.getElementById('assist-checkbox');
 
 // 初始化游戏
 function initGame() {
@@ -26,6 +29,8 @@ function initGame() {
     statusDisplay.textContent = '';
     minesCount.textContent = MINES_COUNT;
     clearInterval(timerInterval);
+    highlightIntensity = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+    if (assistEnabled) renderHighlights();
     
     // 创建棋盘
     for (let i = 0; i < BOARD_SIZE; i++) {
@@ -92,6 +97,7 @@ function revealEmpty(x, y) {
             }
         }
     }
+    refreshAssistHighlights();
 }
 
 // 检查胜利条件
@@ -104,6 +110,50 @@ function checkWin() {
         }
     }
     return correctFlags === MINES_COUNT;
+}
+
+// 计算所有格子的高亮强度（每个已点开数字格的周边9格各叠加其数字值）
+function recalculateHighlights() {
+    highlightIntensity = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (revealed[i][j] && !mines[i][j]) {
+                const count = getAdjacentMines(i, j);
+                if (count > 0) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const nx = i + dx;
+                            const ny = j + dy;
+                            if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+                                highlightIntensity[nx][ny] += count;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 根据强度渲染高亮
+function renderHighlights() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        const x = parseInt(cell.dataset.x);
+        const y = parseInt(cell.dataset.y);
+        const intensity = highlightIntensity[x][y];
+        if (assistEnabled && intensity > 0) {
+            const opacity = Math.min(intensity * 0.15, 1.0);
+            cell.style.boxShadow = `inset 0 0 0 2px rgba(255, 0, 0, ${opacity})`;
+        } else {
+            cell.style.boxShadow = '';
+        }
+    });
+}
+
+// 刷新辅助高亮（计算后重新渲染）
+function refreshAssistHighlights() {
+    recalculateHighlights();
+    renderHighlights();
 }
 
 // 处理单元格点击
@@ -160,6 +210,8 @@ function handleClick(e) {
         e.target.style.color = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'gray'][mineCount - 1];
     }
 
+    refreshAssistHighlights();
+
     if (checkWin()) {
         gameOver = true;
         clearInterval(timerInterval);
@@ -176,6 +228,20 @@ function handleClick(e) {
 board.addEventListener('contextmenu', e => e.preventDefault());
 board.addEventListener('mousedown', handleClick);
 newGameBtn.addEventListener('click', initGame);
+assistCheckbox.addEventListener('change', (e) => {
+    assistEnabled = e.target.checked;
+    if (assistEnabled) {
+        refreshAssistHighlights();
+    } else {
+        clearHighlights();
+    }
+});
+
+function clearHighlights() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.style.boxShadow = '';
+    });
+}
 
 // 开始游戏
 initGame();
